@@ -1,0 +1,14 @@
+<launch>
+	<node pkg="object_recognition_cnn" type="object_recognition_cnn" name="object_recognition_cnn" output="screen">
+	    <param name="image" value="/robot/Kinect/rgb/image" />
+	    <!--<param name="image" value="/camera/rgb/image_rect_color" />-->
+	    <!--<param name="image" value="/camera/rgb/image_rect_color" />-->
+	    <!--<param name="image" value="/usb_cam/image_raw" />-->
+	    <!--<param name="image_transport" value="compressed" />-->
+	    <param name="weights" value="$(find object_recognition_cnn)/80x60_5_5bgr2.save" />
+        <!--<param name="localisationService" value="/objRecog/localizeObj" />-->
+	    <param name="localisationService" value="" />
+	    <param name="interesting_images_topic" value="/interesting_images" />
+	    <param name="use_own_localisazion" value="true" />
+	</node>
+</launch>

@@ -1,0 +1,7 @@
+uint8 hue_min
+uint8 sat_min
+uint8 val_min
+uint8 hue_max
+uint8 sat_max
+uint8 val_max
+---

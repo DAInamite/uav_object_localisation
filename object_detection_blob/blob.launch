@@ -1,0 +1,9 @@
+<launch>
+    <node pkg="object_detection_blob" name="object_detection_blob_node" type="object_detection_blob_node">
+        <param name="publishMasks" type="bool" value="true" />
+        <param name="correction" type="string" value="naive" />
+        <!--<param name="imageTopic" type="string" value="/usb_cam/image_raw" />-->
+        <param name="imageTopic" type="string" value="/bluefox/image_rect_color" />
+        <param name="objectsTopic" type="string" value="object_detection_blob_node/detected_objects" />
+    </node>
+</launch>

@@ -1,0 +1,1 @@
+rosbag record /camera/rgb/image_rect_color /camera/depth_registered/hw_registered/image_rect_raw /px4flow/opt_flow /tf

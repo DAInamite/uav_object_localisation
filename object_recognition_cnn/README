@@ -1,0 +1,119 @@
+SUMMARY
+#######
+
+The object_recognition_cnn node localizes objects using a convolutional neural network. Whenever an object is detected in an arriving image on the specified topic with certain probability an Object.msg is published on topic /detected_objects. If there are multiple objects in the image one message per object will be published.
+In order to test the localization a localization_tester node has been created (see second part of this document).
+
+BUILD
+#####
+
+catkin_make will of course build the node.
+There are many options to influence enabled features and general configuration at compile time.
+To change the setup edit the line starting with 'set(CMAKE_CXX_FLAGS' in CMakeLists.txt.
+options are:
+### tecnical options
+-DCNN_USE_TBB to enabe multithreading using intel's thread building blocks (recommended)
+-DCNN_USE_AVX to enable advannced vector extensions (recommended)
+-DCNN_USE_SSE to enable streaming SIMD extensions (use this if no AVX is available, AVX and SSE are mutually exclusive)
+### network options
+-DFULLY_CONNECTED to make a fully connected instead of a partially connected network (fully connected learns slower and might suffer fron symmetry but who knows ...)
+-DHSV_COLOR_SPACE to use the HSV color space
+-DYUV_COLOR_SPACE to use the YUV color space
+-DYCRCB_COLOR_SPACE to use the YcrCb color space
+-DGRAYSCALE actually takes YCrCb and only first channel 
+ DCHANNELS=<vector initializer list> e.g. -DCHANNELS={0, 2} (default {0, 1, 2}) When using anything other than 3 colour channels adjust the network's first layer input dimensions in CNN.cpp 'C1(NETSIZE_X, NETSIZE_Y, <kernel size>, <input dimension>, <output dimension>)'.
+Note that color space and channel options in the CMakeLists file may not look right considering the input dimensions at first sight. The reason for this may be that the network is using additional colour represenations. Only one representation must be defined at a time but there could be something else hard-coded into the source code. Look carefully at the code to find out. Good spots are load_images() in loader.h or CNN::onImageArrive().
+### other options
+-DSAVE_KERNELS to store images of training progress in folder kernelImages (which has to be created manually at the working directory)
+-DHEADLESS to not create any graphical output
+
+USAGE
+#####
+
+To start the object detection node call
+rosrun object_recognition_cnn object_recognition_cnn [_image:=<topic>] 
+The default topic is /camera/rgb/image_color
+E.g. 'rosrun object_recognition_cnn object_recognition_cnn _image:="image_preprocessor/hsv/lcorrected"' to get normalized images from the preprocessing node.
+
+When the node is running it is possible to interact with it using rosservice calls.
+Available services are:
+### loadImages
+This call will load images to the database which are then ready to be used for training and testing. Images are loaded by category. Paths to folders containing images must be defined by rosparams. The rosparams 'noise', 'base', 'battery,' and 'pot' (and combinations of the latter 3 words in camel case alphabetical order) will be used. If a parameter is not set or the empty string no images will be loaded for this category. An example rosparam call is 'rosparam set base /home/quad2/workspace/spacebot2014ws/testImages/base'. Note that the paths must not contain a trailing '/' (except the root directory, of course!). The rosparam 'maxCount' (default 1000) specifies the maximum number of images loaded per class.
+Another method to load images is to set the rosparam 'training' to true (default false) and 'label' to a valid class identifier (0 for noise, 1, 2, 4 for base, battery and pot and 3, 5, 6 and 7 for combinations). Incoming images will now be stored instead of evaluated and can be used for training later.
+### clear
+Call this to remove stored images. If the rosparam 'clearWeights' is set to true (default false) any training results will also be deleted.
+### loadWeights <file>
+This service loads a previously saved weight file. The file path may be absolute or relative to the working directory.
+### storeWeights <file>
+This service stores the training results. Usage is equivalent to loadWeights.
+### train
+Call this service when images are loaded and parameter for training are set up. Those parameter are the 'learningRate' (default .01, can only be set before starting the training process), learing rate decay ('LRdecay', default .95, can be altered during training), 'minibatch' size (default 3, best set to the number of training image classes). If the rosparam 'continueTraining' (which will be set to true when trining is started) is set to false the training will stop after completing the running epoch. If the rosparam 'clearWeights' is set at the beginning of the training (dafault true) previously trained weights will be discarded and training starts from scratch. If you want to build upon previous training results make sure to set it to false before calling this service.
+### test
+This service evaluates all loaded images. No localization but only classification will be performed. See also rosparam thresh.
+### localize <file> <scale factor> <offset x> <offset y>
+Use this service to perform interactive localization. The image at the file path will be used. At first the most significant object will be classified and then subimages will be search for the detected object. Press <enter> to continue with this process. The scale factor detemines the zoom level at every iteration (there are at most 3 iterations if the probability if the search object remains > .2). A value of .6 for example means that every tile in the next iteration comprizes 60% of the the current's iteration tile width and height. An offset value of .3 for example means that the tile is shifted 30% of the previous iteration's tile size at each step.
+
+
+ROSPARAM
+########
+
+This list names all previouly explained parameter again in order of appearance and describes the ramaining ones.
+### associated with loading images
+noise
+base
+battery
+pot
+batteryBase
+batteryPot
+basePot
+batteryBasePot
+maxCount
+training (used in incoming image handler to store instead of process image)
+label
+### associated with taining
+clearWeights (also used in clear service handler)
+learingRate
+LRdecay
+minibatch
+continueTraining
+thresh (set the threshold at what level of certainty an object is identified as such (default .2 (range is -.5 to .5))
+### associated with performance / incoming images
+skip (interger specifying how many incomming images should be skipped in a row (-1 all, 0 none, 1 every second image and so on))
+
+
+
+
+
+
+LOCALIZATION TESTER
+###################
+
+The localization tester can be used to evaluate the localization performance of the above object detection node automatically using labeled images. More than 10k images have been tagged and serve as test set which can be downloaded here: https://owncloud.tu-berlin.de/public.php?service=files&t=0d8028282a64104c90e6d4c2c88d077c. The images have been tagged using the game-like tagger in the testImages/tagger directory.
+The images are sorted in directories by the combination of object depicted on them. Each directory contains an index.txt file specifying the location of object in the images. Each line in this file describes one particular image and is composed of file name (must not contain spaces) and image coordinates for base, battery and pot (in this order, (0, 0) is top left, values < 0 in coordinates mean there is no such object).
+
+USAGE
+#####
+The object detection node must be running and ready (weights loaded).
+Start the localization_tester node with at least the private parameter "path" set to a path to a directory containing tagged images (again without trailing /). For example call
+rosrun object_recognition_cnn localization_tester _path:=<path> 
+There are additional settings that may be specified using private rosparams at startup. Those are:
+threshold (integer specifying maximum distance of the detected location to the tagged location that should be considered OK (default 84))
+interactive (boolean that turns interactive mode on or off (default on))
+
+The interactive mode stops whenever a difference greater than threshold is detected and therefore allows to evaluate the situation manually. To continue hit <enter>, to quit type "q" and hit <enter>
+
+
+TAGGER
+######
+
+In the directory <spacebot root>/testImages/tagger is a program that can be used to create the index files for the localization_tester node. It is like a game that lets you click on objects to mark their location. Run the program with the arguments <image dir> [base] [battery] [beaker] [allImages].
+<image dir> must be the path to a directory containing images (again, no trailing / and no whitespaces)
+The following 3 keywords tell the program what types of objects are in the images so that it an associate your clicks with object types. Any combination of the 3 words is possible but one of them is at least mandatory, of course! The order does not matter. The tagger will always use the order base - battery - pot (called "beaker" here) and skip those that are not present.
+The last (allImages) keyword is optional and makes the program go through all images in the directory, not only those that are still untagged.
+The program only uses the opencv mouse listener and is therefore limited to mouse (or touchscreen!) input with some modifier keys.
+
+Left-click with the crosshair at the correct object to mark it. The requested type is indicated by the colour of the crosshair. The colour is the opposite of the requested object's colour to provide maximum contrast. A circle will appear and the next object will be requested (possibly in a new image).
+
+Right-click anywhere to skip the object (preserves any previous localization of this object in this image). Use ctrl key and right-click to skip all remaining objects in this image and continue with the next one.
+
+Middle-click to return to the previous image. The sequence base - battery - beaker will start again. Use ctrl-shift-middle-click to quit and save the progress. The program also saves and quits automatically when all images in the directory are tagged.

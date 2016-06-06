@@ -1,0 +1,9 @@
+string filename
+uint8 object_type
+float64 scale
+float64 offsetX
+float64 offsetY
+bool interactive
+---
+float64 posX
+float64 posY

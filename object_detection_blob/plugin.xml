@@ -1,0 +1,15 @@
+<library path="src">
+  <class name="BlobDetectionCalibration" type="rqt_calibration_gui.blob_calibration_gui.Overview" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      Blob Calibration
+    </description>
+    <qtgui>
+      <group>
+        <label>Blob Detection</label>
+      </group>
+      <label>Blob Calibration</label>
+      <icon type="theme">system-help</icon>
+      <statustip>calibrate hue, saturation, value for each object.</statustip>
+    </qtgui>
+  </class>
+</library>

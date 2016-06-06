@@ -1,0 +1,19 @@
+<launch>
+    <remap from="/usbcam/image_raw" to="/bluefox/image_rect_color" />
+    <include file="$(find object_detection_blob)/blob.launch" />
+    
+    <node pkg="object_localization_estimator" type="object_localization_estimator_node" name="object_localization_estimator_node" output="screen">
+        <!-- Topics that are tracked -->
+        <param name="worldFrame" value="world" />
+        <param name="cameraFrame" value="bluefox" />
+        <param name="copterFrame" value="base_link" />
+        <param name="topic_blob" value="/object_detection_blob_node/object_detection_blob_node/detected_objects" />
+        <param name="topic_publish_objects" value="/localized_objects" />
+        <param name="topic_publish_walls" value="/localized_walls" />
+        
+        <!-- parameters of the camera -->
+        <param name="fov_h" value="90" />
+        <param name="fov_v" value="70" />
+    </node>
+</launch>
+

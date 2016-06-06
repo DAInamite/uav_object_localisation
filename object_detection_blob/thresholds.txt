@@ -1,0 +1,33 @@
+sim:
+
+base
+    hue: 179-  1
+    sat: 150-255
+    val: 150-255
+
+battery
+    hue: 17 - 20
+    sat: 150-255
+    val: 150-255
+
+cup
+    hue: 105-110
+    sat: 200-255
+    val: 40 -255
+    
+real:
+
+base
+    hue: 170- 10
+    sat: 150-255
+    val: 150-255
+
+battery
+    hue: 10 - 3p0
+    sat: 150-255
+    val: 150-255
+
+cup
+    hue: 100-120
+    sat: 140-255
+    val: 40 -255
