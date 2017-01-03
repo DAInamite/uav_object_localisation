@@ -12,6 +12,7 @@
 #include "object_detection_blob/adjust_ranges.h"
 
 using namespace cv;
+using namespace std;
 
 class BlobDetection
 {
